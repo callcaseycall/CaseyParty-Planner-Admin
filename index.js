@@ -102,8 +102,16 @@ function SelectedParty() {
     <address>${selectedParty.location}</address>
     <p>${selectedParty.description}</p>
     <GuestList></GuestList>
+    <button id="deleteButton">Delete Event</button>
   `;
   $party.querySelector("GuestList").replaceWith(GuestList());
+
+  const $deleteButton = $party.querySelector("#deleteButton");
+  $deleteButton.addEventListener("click", () => {
+    if (confirm("Confirm Delete?")) {
+      deleteEvent(selectedParty.id);
+    }
+  });
 
   return $party;
 }
@@ -136,22 +144,111 @@ const form = () => {
   $form.innerHTML = `
   <form>
   <div class="form-group">
-    <label for="exampleInputEmail1">Email address</label>
-    <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Enter email">
-    <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
+    <label for="exampleInputEmail1">Event Name</label>
+    <input class="form-control" id="newEventName" placeholder="Name">
+ <div>
+   <div class="form-group">
+    <label for="exampleInputEmail1">Description</label>
+    <input class="form-control" id="newEventDescription" placeholder="Description">
   </div>
-  <div class="form-group">
-    <label for="exampleInputPassword1">Password</label>
-    <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+   <div class="form-group">
+    <label for="exampleInputEmail1">Date</label>
+    <input type="date" class="form-control" id="newEventDate" placeholder="Date">
   </div>
-  <div class="form-group form-check">
-    <input type="checkbox" class="form-check-input" id="exampleCheck1">
-    <label class="form-check-label" for="exampleCheck1">Check me out</label>
+   <div class="form-group">
+    <label for="exampleInputEmail1">Location</label>
+    <input class="form-control" id="newEventLocation" placeholder="Location">
   </div>
-  <button type="submit" class="btn btn-primary">Submit</button>
+  <button type="submit" class="btn btn-primary">Create Event</button>
 </form>
   `;
+
+  $form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const dateInput = document.querySelector("#newEventDate").ariaValueMax;
+    if (dateInput) {
+      const isoDate = new Date(dateInput).toISOString();
+      console.log("ISO Date:", isoDate);
+    }
+  });
+
+  return $form;
 };
+
+const addNewEvent = async (e) => {
+  e.preventDefault();
+  console.log(e);
+  console.log(e.target);
+  console.log(e.target[0]);
+  console.log(e.target[0].value);
+  console.log(e.target[1].value);
+  console.log(e.target[2].value);
+  console.log(e.target[3].value);
+
+  const obj = {
+    name: e.target[0].value,
+    description: e.target[1].value,
+    date: new Date(e.target[2].value).toISOString(),
+    location: e.target[3].value,
+  };
+
+  console.log(obj);
+  try {
+    const response = await fetch(API + "/events", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(obj),
+    });
+
+    console.log(response);
+    const data = await response.json();
+    console.log(data);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const deleteEvent = async (id) => {
+  const response = await fetch(`${API}/events/${id}`, {
+    method: "DELETE",
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+  })
+    .then((resp) => resp.json())
+    .then(() => {
+      $party.innerHTML = "";
+      const party = $party.querySelector(`[data-id='${id}']`);
+      party.remove();
+    });
+};
+// function renderHomes(home) {
+//   let deleteHome = document.createElement("button");
+//   deleteHome.setAttribute("id", "delete-btn");
+//   deleteHome.innerText = "delete listing";
+//   deleteHome.addEventListener("click", function (event) {
+//     console.log("test222 home id ", homeDiv.id);
+
+//     if (event.target.id === "delete-btn") {
+//       fetch(`http://localhost:3000/homes/${home.id}`, {
+//         method: "DELETE",
+//         headers: {
+//           "content-type": "application/json",
+//           accept: "application/json",
+//         },
+//       })
+//         .then((resp) => resp.json())
+//         .then(() => {
+//           homeDiv.innerHTML = "";
+//           const home = homeDiv.querySelector(`[data-id='${homeDiv.id}']`);
+//           home.remove();
+//         });
+//     }
+//   });
+// }
 
 // === Render ===
 function render() {
@@ -172,6 +269,8 @@ function render() {
 
   $app.querySelector("PartyList").replaceWith(PartyList());
   $app.querySelector("SelectedParty").replaceWith(SelectedParty());
+  $app.addEventListener("submit", addNewEvent);
+  $app.append(form());
 }
 
 async function init() {
